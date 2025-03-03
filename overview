@@ -1,0 +1,31 @@
+IoT-Based Health Monitoring System Using ESP8266
+
+Overview
+
+This project uses an ESP8266 NodeMCU to monitor heart rate and body temperature in real-time. The data can be displayed on the Serial Monitor or sent to a cloud/server for remote health tracking.
+
+Components Used
+
+ESP8266 NodeMCU
+Heart Rate Sensor (e.g., Pulse Sensor or MAX30100)
+Temperature Sensor (e.g., LM35, DS18B20, or DHT11)
+Jumper Wires
+Circuit Connections
+
+Code Explanation
+Reads heart rate and temperature data from sensors.
+Displays the readings on the Serial Monitor.
+Can be extended to send data to IoT platforms like ThingSpeak or Firebase.
+
+Installation & Usage
+
+1. Install Required Libraries (if using MAX30100 or DS18B20)
+2. Connect the components as per the circuit
+3. Upload the code using Arduino IDE
+4. Open the Serial Monitor to view real-time health data
+
+Applications
+
+✅ Remote health monitoring
+✅ Wearable health devices
+✅ IoT-based patient tracking
