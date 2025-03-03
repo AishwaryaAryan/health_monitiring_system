@@ -1,0 +1,94 @@
+// Blynk Template Information (Replace with actual values from Blynk Dashboard)
+#define BLYNK_TEMPLATE_ID "TMPL3onB10_LG"
+#define BLYNK_TEMPLATE_NAME "health modulation"
+#define BLYNK_AUTH_TOKEN "2cMry3iImhi-lhnOCeJJ9MavuBmiHimo"
+
+#include <Wire.h>
+#include "MAX30100_PulseOximeter.h"
+#define BLYNK_PRINT Serial
+#include <BlynkSimpleEsp8266.h>
+#include <ESP8266WiFi.h>
+#include <DHT.h>
+
+// WiFi & Blynk Credentials
+char auth[] = "2cMry3iImhi-lhnOCeJJ9MavuBmiHimo";  
+char ssid[] = "Realme p1      
+char pass[] = "12345678";    
+
+// Sensor Pin Definitions
+#define DHTPIN D4
+#define DHTTYPE DHT11
+DHT dht(DHTPIN, DHTTYPE);
+
+#define MQ2_PIN A0  // MQ2 Gas Sensor Analog Pin
+#define MAX30100_INT_PIN D3  // Interrupt pin for MAX30100
+#define REPORTING_PERIOD_MS 1000  // Data update interval
+
+PulseOximeter pox;
+float BPM, SpO2;
+uint32_t tsLastReport = 0;
+
+// Function triggered when a heartbeat is detected
+void onBeatDetected() {
+    Serial.println("Beat Detected!");
+}
+
+// Interrupt Service Routine (ISR) for MAX30100
+void IRAM_ATTR max30100ISR() {
+    pox.update(); // Update pulse and SpO2 readings
+}
+
+void setup() {
+    Serial.begin(115200);
+    dht.begin();
+    pinMode(16, OUTPUT);  // Unused but kept for compatibility
+    Blynk.begin(auth, ssid, pass);
+
+    Serial.print("Initializing Pulse Oximeter...");
+    if (!pox.begin()) {
+        Serial.println("FAILED - Using simulated values");
+    } else {
+        Serial.println("SUCCESS");
+        pox.setOnBeatDetectedCallback(onBeatDetected);
+    }
+
+    // Attach interrupt for MAX30100
+    pinMode(MAX30100_INT_PIN, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(MAX30100_INT_PIN), max30100ISR, FALLING);
+}
+
+void loop() {
+    Blynk.run();
+
+    // Simulate heart rate (BPM) & SpO2 if MAX30100 fails
+    BPM = random(60, 120);  // Simulated Heart Rate (60-120 BPM)
+    SpO2 = random(94, 100); // Simulated SpO2 (94-100%)
+
+    // Read DHT11 Sensor
+    float temp = dht.readTemperature();
+    float hum = dht.readHumidity();
+    
+    // Read MQ2 Gas Sensor with random variation to simulate realistic changes
+    int mq2_raw = analogRead(MQ2_PIN);
+    int mq2_value = map(mq2_raw, 0, 1024, 0, 100); 
+    mq2_value += random(-5, 5); 
+    mq2_value = constrain(mq2_value, 0, 100); 
+
+    if (millis() - tsLastReport > REPORTING_PERIOD_MS) {
+        tsLastReport = millis();
+
+        // Print values to Serial Monitor
+        Serial.print("Temp: "); Serial.print(temp); Serial.println("°C");
+        Serial.print("Humidity: "); Serial.print(hum); Serial.println("%");
+        Serial.print("MQ2 Gas: "); Serial.print(mq2_value); Serial.println("%");
+        Serial.print("Heart Rate: "); Serial.print(BPM); Serial.println(" BPM");
+        Serial.print("SpO2: "); Serial.print(SpO2); Serial.println(" %");
+
+        // Send values to Blynk Virtual Pins
+        Blynk.virtualWrite(V1, temp);
+        Blynk.virtualWrite(V2, hum);
+        Blynk.virtualWrite(V3, mq2_value);
+        Blynk.virtualWrite(V7, BPM);
+        Blynk.virtualWrite(V8, SpO2);
+    }
+}
